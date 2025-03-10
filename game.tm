@@ -38,7 +38,7 @@ func main(map=(./map.txt)):
             defer: EndDrawing()
 
             inline C {
-                ClearBackground((Color){0xCC, 0xCC, 0xCC, 0xFF});
+                ClearBackground((Color){0x00, 0x00, 0x00, 0xFF});
             }
 
             world:draw()

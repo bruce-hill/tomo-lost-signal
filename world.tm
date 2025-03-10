@@ -7,11 +7,22 @@ use ./letter.tm
 use ./vec32.tm
 
 struct Satellite(pos:Vec2):
-    SIZE := Vec2(50,50)
+    SIZE := Vec2(32,32)
     func draw(s:Satellite):
         #Box(s.pos, Satellite.SIZE, Color.rgb(.8,.3,.8)):draw()
         texture := Texture.load((./assets/Satellite.png))
         texture:draw(s.pos, Satellite.SIZE)
+
+struct Goal(pos:Vec2):
+    SIZE := Vec2(32,32)
+    func draw(g:Goal):
+        texture := Texture.load((./assets/Hurricane.png))
+        texture:draw(g.pos, Goal.SIZE)
+
+struct Stars(pos:Vec2, texture:Texture):
+    SIZE := Vec2(50,50)
+    func draw(s:Stars):
+        s.texture:draw(s.pos, Stars.SIZE, tint=Color.rgb(1,1,1,.2))
 
 # Return a displacement relative to `a` that will push it out of `b`
 func solve_overlap(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Vec2):
@@ -49,7 +60,7 @@ func solve_overlap(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Vec2):
 func overlaps(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Bool):
     return solve_overlap(a_pos, a_size, b_pos, b_size) != Vec2(0, 0)
 
-func draw_line(a,b:Vec2, width=10.0, color=Color.rgb(1,0,0)):
+func draw_line(a,b:Vec2, width=5.0, color=Color.rgb(.5,.5,1.,.8)):
     inline C {
         DrawLineEx(*(Vector2*)&_$a, *(Vector2*)&_$b, (float)_$width, *(Color*)&_$color);
     }
@@ -57,7 +68,8 @@ func draw_line(a,b:Vec2, width=10.0, color=Color.rgb(1,0,0)):
 struct World(
     player=@Player(Vec2(0,0), Vec2(0,0)),
     camera=@Camera(Vec2(0,0)),
-    goal=@Box(Vec2(0,0), Vec2(0,0), Color.GOAL),
+    goal=Goal(Vec2(0,0)),
+    stars=@[:Stars],
     satellites=@[:Satellite],
     boxes=@[:@Box],
     letters=@[:Letter],
@@ -79,7 +91,7 @@ struct World(
         w.player.has_signal = (or: w:raycast(s.pos, w.player.pos) == w.player.pos for s in w.satellites) or no
         w.player:update()
 
-        if overlaps(w.player.pos, Player.SIZE, w.goal.pos, w.goal.size):
+        if overlaps(w.player.pos, Player.SIZE, w.goal.pos, Goal.SIZE):
             w.won = yes
 
         # Resolve player overlapping with any boxes:
@@ -119,6 +131,9 @@ struct World(
             w.camera:begin_drawing()
             defer: w.camera:end_drawing()
 
+            for s in w.stars:
+                s:draw()
+
             for b in w.boxes:
                 b:draw()
 
@@ -139,7 +154,7 @@ struct World(
 
         if w.won:
             inline C {
-                DrawText("WINNER", GetScreenWidth()/2-48*3, GetScreenHeight()/2-24, 48, (Color){0,0,0,0xFF});
+                DrawText("WINNER", GetScreenWidth()/2-48*3, GetScreenHeight()/2-24, 48, (Color){0x80,0xFF,0x80,0xFF});
             }
 
     func load_map(w:@World, map:Text):
@@ -147,6 +162,7 @@ struct World(
             map = map:replace_all({$/[]/="#", $/@{1..}/="@", $/  /=" "})
         w.boxes = @[:@Box]
         box_size := Vec2(50., 50.)
+        star_textures := [Texture.load(t) for t in (./assets/WhiteStar*):glob()]
         for y,line in map:lines():
             for x,cell in line:split():
                 pos := Vec2((Num32(x)-1) * box_size.x, (Num32(y)-1) * box_size.y)
@@ -157,9 +173,12 @@ struct World(
                     pos += box_size/2 - Player.SIZE/2
                     w.player = @Player(pos,pos)
                 else if cell == "?":
-                    w.goal = @Box(pos, size=box_size, color=Color.GOAL)
+                    w.goal = Goal(pos)
                 else if cell == "+":
                     w.satellites:insert(Satellite(pos))
+                else if cell == " ":
+                    if random:bool(0.2):
+                        w.stars:insert(Stars(pos, star_textures:random()))
                 else if cell != " ":
                     w.letters:insert(Letter(CString(cell), pos))
 
