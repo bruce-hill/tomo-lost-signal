@@ -39,12 +39,39 @@ func solve_overlap(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Vec2):
 
     return Vec2(0, 0)
 
-struct World(player:@Player, camera:@Camera, goal:@Box, boxes:@[@Box], dt_accum=0.0, won=no):
+func overlaps(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Bool):
+    return solve_overlap(a_pos, a_size, b_pos, b_size) != Vec2(0, 0)
+
+func draw_line(a,b:Vec2, width=10.0, color=Color(1,0,0)):
+    inline C {
+        DrawLineEx(
+            ((Vector2){(float)_$a.$x, (float)_$a.$y}),
+            ((Vector2){(float)_$b.$x, (float)_$b.$y}),
+            (float)_$width,
+            (Color){
+                (uint8_t)(255.*_$color.$r),
+                (uint8_t)(255.*_$color.$g),
+                (uint8_t)(255.*_$color.$b),
+                (uint8_t)(255.*_$color.$a),
+            }
+        );
+    }
+
+struct World(
+    player:@Player,
+    camera:@Camera,
+    goal:@Box,
+    control:Vec2,
+    boxes:@[@Box],
+    dt_accum=0.0,
+    won=no,
+):
     DT := 1./60.
     CURRENT := @World(
         player=@Player(Vec2(0,0), Vec2(0,0)),
         camera=@Camera(Vec2(0,0)),
         goal=@Box(Vec2(0,0), Vec2(0,0), Color.GOAL),
+        control=Vec2(0,0),
         boxes=@[:@Box],
     )
     STIFFNESS := 0.3
@@ -58,9 +85,10 @@ struct World(player:@Player, camera:@Camera, goal:@Box, boxes:@[@Box], dt_accum=
         w.camera:update(dt)
 
     func update_once(w:@World):
+        w.player.has_signal = (w:raycast(w.control, w.player.pos) == w.player.pos)
         w.player:update()
 
-        if solve_overlap(w.player.pos, Player.SIZE, w.goal.pos, w.goal.size) != Vec2(0,0):
+        if overlaps(w.player.pos, Player.SIZE, w.goal.pos, w.goal.size):
             w.won = yes
 
         # Resolve player overlapping with any boxes:
@@ -72,6 +100,29 @@ struct World(player:@Player, camera:@Camera, goal:@Box, boxes:@[@Box], dt_accum=
 
         w.camera:update(World.DT)
 
+    func raycast(w:@World, start:Vec2, end:Vec2 -> Vec2):
+        return end if start == end
+        dist := start:dist(end)
+        forward := (end - start)
+
+        for b in w.boxes:
+            x_min := b.pos.x - b.size.x/2
+            x_max := b.pos.x + b.size.x/2
+            y_min := b.pos.y - b.size.y/2
+            y_max := b.pos.y + b.size.y/2
+
+            times := [
+                (x_min - start.x)/forward.x,
+                (x_max - start.x)/forward.x,
+                (y_min - start.y)/forward.y,
+                (y_max - start.y)/forward.y,
+            ]
+            hit_time := (_min_: t for t in times if (0 <= t and t <= 1) and b:has_point(start + (t or skip)*forward))
+            if hit_time:
+                return start + hit_time*forward
+
+        return end
+
     func draw(w:@World):
         do:
             w.camera:begin_drawing()
@@ -81,6 +132,9 @@ struct World(player:@Player, camera:@Camera, goal:@Box, boxes:@[@Box], dt_accum=
                 b:draw()
             w.goal:draw()
             w.player:draw()
+
+            hit := w:raycast(w.control, w.player.pos)
+            draw_line(w.control, hit)
             #w.camera:draw()
 
         if w.won:
@@ -95,15 +149,15 @@ struct World(player:@Player, camera:@Camera, goal:@Box, boxes:@[@Box], dt_accum=
         box_size := Vec2(50., 50.)
         for y,line in map:lines():
             for x,cell in line:split():
+                pos := Vec2((Num(x)-1) * box_size.x, (Num(y)-1) * box_size.y)
                 if cell == "#":
-                    pos := Vec2((Num(x)-1) * box_size.x, (Num(y)-1) * box_size.y)
                     box := @Box(pos, size=box_size, color=Color.GRAY)
                     w.boxes:insert(box)
                 else if cell == "@":
-                    pos := Vec2((Num(x)-1) * box_size.x, (Num(y)-1) * box_size.y)
                     pos += box_size/2. - Player.SIZE/2.
                     w.player = @Player(pos,pos)
                 else if cell == "?":
-                    pos := Vec2((Num(x)-1) * box_size.x, (Num(y)-1) * box_size.y)
                     w.goal = @Box(pos, size=box_size, color=Color.GOAL)
+                else if cell == "+":
+                    w.control = pos
 

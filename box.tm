@@ -3,12 +3,12 @@ use vectors
 
 use ./color.tm
 
-struct Box(pos:Vec2, size=Vec2(50, 50), color=Color.GRAY, blocking=yes):
+struct Box(pos:Vec2, size=Vec2(50, 50), color=Color.GRAY):
     func draw(b:Box):
         b.color:draw_rectangle(b.pos-b.size/2, b.size)
 
     func offset_by(b:Box, offset:Vec2 -> Box):
-        return Box(b.pos + offset, b.size, b.color, b.blocking)
+        return Box(b.pos + offset, b.size, b.color)
 
     func at(b:Box, pos:Vec2 -> Box):
         b.pos = pos
