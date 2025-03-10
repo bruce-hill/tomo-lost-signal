@@ -6,6 +6,13 @@ use ./box.tm
 use ./letter.tm
 use ./vec32.tm
 
+struct Satellite(pos:Vec2):
+    SIZE := Vec2(50,50)
+    func draw(s:Satellite):
+        #Box(s.pos, Satellite.SIZE, Color.rgb(.8,.3,.8)):draw()
+        texture := Texture.load((./assets/Satellite.png))
+        texture:draw(s.pos, Satellite.SIZE)
+
 # Return a displacement relative to `a` that will push it out of `b`
 func solve_overlap(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Vec2):
     a_left := a_pos.x - a_size.x/2
@@ -51,14 +58,13 @@ struct World(
     player=@Player(Vec2(0,0), Vec2(0,0)),
     camera=@Camera(Vec2(0,0)),
     goal=@Box(Vec2(0,0), Vec2(0,0), Color.GOAL),
-    controls=@[:Vec2],
+    satellites=@[:Satellite],
     boxes=@[:@Box],
     letters=@[:Letter],
     dt_accum=Num32(0.0),
     won=no,
 ):
     DT := (Num32(1.)/Num32(60.))!
-    CURRENT := @World()
     STIFFNESS := Num32(0.3)
 
     func update(w:@World, dt:Num32):
@@ -70,7 +76,7 @@ struct World(
         w.camera:update(dt)
 
     func update_once(w:@World):
-        w.player.has_signal = (or: w:raycast(c, w.player.pos) == w.player.pos for c in w.controls) or no
+        w.player.has_signal = (or: w:raycast(s.pos, w.player.pos) == w.player.pos for s in w.satellites) or no
         w.player:update()
 
         if overlaps(w.player.pos, Player.SIZE, w.goal.pos, w.goal.size):
@@ -119,12 +125,15 @@ struct World(
             for l in w.letters:
                 l:draw()
 
+            for s in w.satellites:
+                s:draw()
+
             w.goal:draw()
             w.player:draw()
 
-            for c in w.controls:
-                hit := w:raycast(c, w.player.pos)
-                draw_line(c, hit)
+            for s in w.satellites:
+                hit := w:raycast(s.pos, w.player.pos)
+                draw_line(s.pos, hit)
 
             #w.camera:draw()
 
@@ -150,7 +159,7 @@ struct World(
                 else if cell == "?":
                     w.goal = @Box(pos, size=box_size, color=Color.GOAL)
                 else if cell == "+":
-                    w.controls:insert(pos)
+                    w.satellites:insert(Satellite(pos))
                 else if cell != " ":
                     w.letters:insert(Letter(CString(cell), pos))
 

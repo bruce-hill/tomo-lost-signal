@@ -1,6 +1,6 @@
 
 
-game: game.tm box.tm color.tm player.tm world.tm camera.tm
+game: game.tm box.tm color.tm player.tm world.tm camera.tm textures.tm vec32.tm
 	tomo -e game.tm
 
 # Disable built-in makefile rules:

@@ -4,6 +4,7 @@ use <raymath.h>
 
 use ./camera.tm
 use ./world.tm
+use ./player.tm
 
 func main(map=(./map.txt)):
     inline C {
@@ -13,7 +14,7 @@ func main(map=(./map.txt)):
 
     map_contents := map:read() or exit("Could not find the game map: $map")
 
-    world := World.CURRENT
+    world := @World()
     world:load_map(map_contents)
 
     extern SetTargetFPS:func(fps:Int32)
