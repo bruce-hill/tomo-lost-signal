@@ -5,6 +5,7 @@ use ./player.tm
 use ./camera.tm
 use ./color.tm
 use ./box.tm
+use ./letter.tm
 
 # Return a displacement relative to `a` that will push it out of `b`
 func solve_overlap(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Vec2):
@@ -63,6 +64,7 @@ struct World(
     goal:@Box,
     control:Vec2,
     boxes:@[@Box],
+    letters:@[Letter],
     dt_accum=0.0,
     won=no,
 ):
@@ -73,6 +75,7 @@ struct World(
         goal=@Box(Vec2(0,0), Vec2(0,0), Color.GOAL),
         control=Vec2(0,0),
         boxes=@[:@Box],
+        letters=@[:Letter],
     )
     STIFFNESS := 0.3
 
@@ -130,6 +133,10 @@ struct World(
 
             for b in w.boxes:
                 b:draw()
+
+            for l in w.letters:
+                l:draw()
+
             w.goal:draw()
             w.player:draw()
 
@@ -160,4 +167,6 @@ struct World(
                     w.goal = @Box(pos, size=box_size, color=Color.GOAL)
                 else if cell == "+":
                     w.control = pos
+                else if cell != " ":
+                    w.letters:insert(Letter(CString(cell), pos))
 
