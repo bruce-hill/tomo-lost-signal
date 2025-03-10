@@ -8,15 +8,15 @@ use ./box.tm
 
 # Return a displacement relative to `a` that will push it out of `b`
 func solve_overlap(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Vec2):
-    a_left := a_pos.x
-    a_right := a_pos.x + a_size.x
-    a_top := a_pos.y
-    a_bottom := a_pos.y + a_size.y
+    a_left := a_pos.x - a_size.x/2
+    a_right := a_pos.x + a_size.x/2
+    a_top := a_pos.y - a_size.x/2
+    a_bottom := a_pos.y + a_size.y/2
 
-    b_left := b_pos.x
-    b_right := b_pos.x + b_size.x
-    b_top := b_pos.y
-    b_bottom := b_pos.y + b_size.y
+    b_left := b_pos.x - b_size.x/2
+    b_right := b_pos.x + b_size.x/2
+    b_top := b_pos.y - b_size.y/2
+    b_bottom := b_pos.y + b_size.y/2
 
     # Calculate the overlap in each dimension
     overlap_x := (a_right _min_ b_right) - (a_left _max_ b_left)
@@ -67,7 +67,7 @@ struct World(player:@Player, camera:@Camera, goal:@Box, boxes:@[@Box], dt_accum=
         for i in 3:
             for b in w.boxes:
                 correction := solve_overlap(w.player.pos, Player.SIZE, b.pos, b.size)
-                w.camera:add_shake(.1*correction:length())
+                #w.camera:add_shake(.1*correction:length())
                 w.player.pos += World.STIFFNESS * correction
 
         w.camera:update(World.DT)
@@ -81,7 +81,7 @@ struct World(player:@Player, camera:@Camera, goal:@Box, boxes:@[@Box], dt_accum=
                 b:draw()
             w.goal:draw()
             w.player:draw()
-            w.camera:draw()
+            #w.camera:draw()
 
         if w.won:
             inline C {
