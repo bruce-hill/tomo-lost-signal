@@ -1,11 +1,10 @@
 
-use vectors
-
 use ./player.tm
 use ./camera.tm
 use ./color.tm
 use ./box.tm
 use ./letter.tm
+use ./vec32.tm
 
 # Return a displacement relative to `a` that will push it out of `b`
 func solve_overlap(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Vec2):
@@ -43,43 +42,26 @@ func solve_overlap(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Vec2):
 func overlaps(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Bool):
     return solve_overlap(a_pos, a_size, b_pos, b_size) != Vec2(0, 0)
 
-func draw_line(a,b:Vec2, width=10.0, color=Color(1,0,0)):
+func draw_line(a,b:Vec2, width=10.0, color=Color.rgb(1,0,0)):
     inline C {
-        DrawLineEx(
-            ((Vector2){(float)_$a.$x, (float)_$a.$y}),
-            ((Vector2){(float)_$b.$x, (float)_$b.$y}),
-            (float)_$width,
-            (Color){
-                (uint8_t)(255.*_$color.$r),
-                (uint8_t)(255.*_$color.$g),
-                (uint8_t)(255.*_$color.$b),
-                (uint8_t)(255.*_$color.$a),
-            }
-        );
+        DrawLineEx(*(Vector2*)&_$a, *(Vector2*)&_$b, (float)_$width, *(Color*)&_$color);
     }
 
 struct World(
-    player:@Player,
-    camera:@Camera,
-    goal:@Box,
-    control:Vec2,
-    boxes:@[@Box],
-    letters:@[Letter],
-    dt_accum=0.0,
+    player=@Player(Vec2(0,0), Vec2(0,0)),
+    camera=@Camera(Vec2(0,0)),
+    goal=@Box(Vec2(0,0), Vec2(0,0), Color.GOAL),
+    controls=@[:Vec2],
+    boxes=@[:@Box],
+    letters=@[:Letter],
+    dt_accum=Num32(0.0),
     won=no,
 ):
-    DT := 1./60.
-    CURRENT := @World(
-        player=@Player(Vec2(0,0), Vec2(0,0)),
-        camera=@Camera(Vec2(0,0)),
-        goal=@Box(Vec2(0,0), Vec2(0,0), Color.GOAL),
-        control=Vec2(0,0),
-        boxes=@[:@Box],
-        letters=@[:Letter],
-    )
-    STIFFNESS := 0.3
+    DT := (Num32(1.)/Num32(60.))!
+    CURRENT := @World()
+    STIFFNESS := Num32(0.3)
 
-    func update(w:@World, dt:Num):
+    func update(w:@World, dt:Num32):
         w.dt_accum += dt
         while w.dt_accum > 0:
             w:update_once()
@@ -88,7 +70,7 @@ struct World(
         w.camera:update(dt)
 
     func update_once(w:@World):
-        w.player.has_signal = (w:raycast(w.control, w.player.pos) == w.player.pos)
+        w.player.has_signal = (or: w:raycast(c, w.player.pos) == w.player.pos for c in w.controls) or no
         w.player:update()
 
         if overlaps(w.player.pos, Player.SIZE, w.goal.pos, w.goal.size):
@@ -140,8 +122,10 @@ struct World(
             w.goal:draw()
             w.player:draw()
 
-            hit := w:raycast(w.control, w.player.pos)
-            draw_line(w.control, hit)
+            for c in w.controls:
+                hit := w:raycast(c, w.player.pos)
+                draw_line(c, hit)
+
             #w.camera:draw()
 
         if w.won:
@@ -156,17 +140,17 @@ struct World(
         box_size := Vec2(50., 50.)
         for y,line in map:lines():
             for x,cell in line:split():
-                pos := Vec2((Num(x)-1) * box_size.x, (Num(y)-1) * box_size.y)
+                pos := Vec2((Num32(x)-1) * box_size.x, (Num32(y)-1) * box_size.y)
                 if cell == "#":
                     box := @Box(pos, size=box_size, color=Color.GRAY)
                     w.boxes:insert(box)
                 else if cell == "@":
-                    pos += box_size/2. - Player.SIZE/2.
+                    pos += box_size/2 - Player.SIZE/2
                     w.player = @Player(pos,pos)
                 else if cell == "?":
                     w.goal = @Box(pos, size=box_size, color=Color.GOAL)
                 else if cell == "+":
-                    w.control = pos
+                    w.controls:insert(pos)
                 else if cell != " ":
                     w.letters:insert(Letter(CString(cell), pos))
 

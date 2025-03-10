@@ -21,14 +21,14 @@ func main(map=(./map.txt)):
 
     extern WindowShouldClose:func(->Bool)
 
-    world.camera.zoom = inline C : Num {
-        (double)GetScreenWidth()/1200.
+    world.camera.zoom = inline C : Num32 {
+        (float)GetScreenWidth()/1200.
     }
 
     while not WindowShouldClose():
         extern GetFrameTime:func(->Num32)
         dt := GetFrameTime()
-        world:update(Num(dt))
+        world:update(dt)
 
         extern BeginDrawing:func()
         extern EndDrawing:func()

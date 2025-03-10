@@ -3,22 +3,22 @@ use libraylib.so
 use <raylib.h>
 use <raymath.h>
 
-use vectors
+use ./vec32.tm
 use ./world.tm
 
 struct Player(pos,prev_pos:Vec2, has_signal=no, target_vel=Vec2(0,0)):
-    WALK_SPEED := 500.
-    ACCEL := 0.3
-    FRICTION := 0.99
+    WALK_SPEED := Num32(500.)
+    ACCEL := Num32(0.3)
+    FRICTION := Num32(0.99)
     SIZE := Vec2(30, 30)
 
     func update(p:@Player):
         if p.has_signal:
-            target_x := inline C:Num {
-                (Num_t)((IsKeyDown(KEY_A) ? -1 : 0) + (IsKeyDown(KEY_D) ? 1 : 0))
+            target_x := inline C:Num32 {
+                (Num32_t)((IsKeyDown(KEY_A) ? -1 : 0) + (IsKeyDown(KEY_D) ? 1 : 0))
             }
-            target_y := inline C:Num {
-                (Num_t)((IsKeyDown(KEY_W) ? -1 : 0) + (IsKeyDown(KEY_S) ? 1 : 0))
+            target_y := inline C:Num32 {
+                (Num32_t)((IsKeyDown(KEY_W) ? -1 : 0) + (IsKeyDown(KEY_S) ? 1 : 0))
             }
             p.target_vel = Vec2(target_x, target_y):norm() * Player.WALK_SPEED
 

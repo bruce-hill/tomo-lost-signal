@@ -1,6 +1,5 @@
 # Defines a struct representing boxes on the terrain
-use vectors
-
+use ./vec32.tm
 use ./color.tm
 
 struct Box(pos:Vec2, size=Vec2(50, 50), color=Color.GRAY):
