@@ -2,7 +2,7 @@
 use ./vec32.tm
 use ./color.tm
 
-struct Box(pos:Vec2, size=Vec2(50, 50), color=Color.GRAY):
+struct Box(pos:Vec2, size=Vec2(50, 50), color=Color.rgb(.32,.32,.45)):
     func draw(b:Box):
         b.color:draw_rectangle(b.pos-b.size/2, b.size)
 

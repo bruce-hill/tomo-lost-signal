@@ -185,7 +185,7 @@ struct World(
             for x,cell in line:split():
                 pos := Vec2((Num32(x)-1) * box_size.x/2, (Num32(y)-1) * box_size.y)
                 if cell == "[":
-                    box := @Box(pos, size=box_size, color=Color.GRAY)
+                    box := @Box(pos, size=box_size)
                     w.boxes:insert(box)
                 else if cell == "]":
                     pass # Ignored
