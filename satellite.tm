@@ -1,3 +1,4 @@
+# A satellite sits on the map and beams controls to the player
 
 use ./raylib.tm
 

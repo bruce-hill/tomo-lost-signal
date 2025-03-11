@@ -1,4 +1,5 @@
 # Defines a struct representing boxes on the terrain
+
 use ./raylib.tm
 
 struct Box(pos:Vector2, size=Vector2(50, 50), color=Color(0x51,0x51,0x72)):

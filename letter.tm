@@ -1,3 +1,5 @@
+# An object that represents a letter of text on the map
+
 use ./raylib.tm
 
 struct Letter(string:CString, pos:Vector2, color=Color(0xff,0xff,0x66,0xcc), size=Int32(30)):

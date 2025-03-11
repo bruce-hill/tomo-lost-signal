@@ -1,4 +1,5 @@
-# A camera module
+# A camera module that wraps around raylib's built-in Camera2D
+
 use ./raylib.tm
 
 struct Camera(pos=Vector2(0,0), target=Vector2(0, 0), forward=Vector2(1,0), anchor=Vector2(0.5, 0.5), rotation=Num32(0.0), zoom=Num32(1.0), shake=Num32(0.0)):

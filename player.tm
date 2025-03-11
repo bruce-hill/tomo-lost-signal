@@ -1,4 +1,5 @@
 # Defines a struct representing the player, which is controlled by WASD keys
+
 use ./raylib.tm
 use ./world.tm
 

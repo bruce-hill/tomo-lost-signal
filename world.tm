@@ -1,3 +1,4 @@
+# This file defines a World struct that keeps track of everything
 
 use ./raylib.tm
 use ./player.tm

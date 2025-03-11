@@ -1,4 +1,7 @@
 #!/bin/env tomo
+
+# Lost Signal is a game for a Recurse Center game jam
+
 use ./raylib.tm
 use ./world.tm
 use ./player.tm

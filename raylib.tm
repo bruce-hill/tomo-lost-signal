@@ -1,4 +1,5 @@
-# Raylib wrapper for some functions and structs
+# Raylib wrappers for some functions and structs
+
 use libraylib.so
 use <raylib.h>
 use <raymath.h>
