@@ -1,7 +1,7 @@
 
 
-game: game.tm box.tm color.tm player.tm world.tm camera.tm textures.tm vec32.tm
-	tomo -e game.tm
+lost-signal: lost-signal.tm box.tm color.tm player.tm world.tm camera.tm textures.tm vec32.tm
+	tomo -e lost-signal.tm
 
 # Disable built-in makefile rules:
 %: %.c
@@ -9,9 +9,9 @@ game: game.tm box.tm color.tm player.tm world.tm camera.tm textures.tm vec32.tm
 %: %.o
 
 clean:
-	rm -vf game *.tm.*
+	rm -vf lost-signal *.tm.*
 
-play: game
-	./game
+play: lost-signal
+	./lost-signal
 
 .PHONY: play, clean
