@@ -6,18 +6,24 @@ use ./camera.tm
 use ./world.tm
 use ./player.tm
 
-func is_pressed(key:Text -> Bool):
-    return inline C : Bool {
-        IsKeyPressed(Text$get_grapheme(_$key, 0))
-    }
+DEFAULT_LEVELS := [
+    (./levels/level1.map),
+    (./levels/level2.map),
+    (./levels/level3.map),
+    (./levels/level4.map),
+]
 
-func main(map=(./map.txt)):
+func main(levels=DEFAULT_LEVELS):
+    if levels.length == 0:
+        exit("No levels provided!")
+
     inline C {
         InitWindow(GetScreenWidth(), GetScreenHeight(), "raylib [core] example - 2d camera");
         ToggleFullscreen();
     }
 
-    world := World.from_map(map)
+    level_index := 1
+    world := World.from_map(levels[level_index])
 
     extern SetTargetFPS:func(fps:Int32)
     SetTargetFPS(60)
@@ -29,8 +35,14 @@ func main(map=(./map.txt)):
         dt := GetFrameTime()
         world:update(dt)
 
-        if is_pressed("R"):
-            world = World.from_map(map)
+        if inline C : Bool { IsKeyPressed(KEY_R) }:
+            world = World.from_map(levels[level_index])
+        else if inline C : Bool { IsKeyPressed(KEY_N) } and level_index < levels.length:
+            level_index += 1
+            world = World.from_map(levels[level_index])
+        else if inline C : Bool { IsKeyPressed(KEY_P) } and level_index > 1:
+            level_index -= 1
+            world = World.from_map(levels[level_index])
 
         extern BeginDrawing:func()
         extern EndDrawing:func()
