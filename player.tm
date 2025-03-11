@@ -9,20 +9,11 @@ use ./world.tm
 
 struct Player(pos,prev_pos:Vec2, facing=Vec2(1,0), has_signal=no, target_vel=Vec2(0,0), texture=Texture.load((./assets/RocketWhite.png))):
     WALK_SPEED := Num32(500.)
-    ACCEL := Num32(0.2)
+    ACCEL := Num32(0.1)
     SIZE := Vec2(32, 32)
     TEXTURE := none:Texture
 
     func update(p:@Player):
-        if p.has_signal:
-            target_x := inline C:Num32 {
-                (Num32_t)((IsKeyDown(KEY_A) ? -1 : 0) + (IsKeyDown(KEY_D) ? 1 : 0))
-            }
-            target_y := inline C:Num32 {
-                (Num32_t)((IsKeyDown(KEY_W) ? -1 : 0) + (IsKeyDown(KEY_S) ? 1 : 0))
-            }
-            p.target_vel = Vec2(target_x, target_y):norm() * Player.WALK_SPEED
-
         vel := (p.pos - p.prev_pos)/World.DT
         vel = vel:mix(p.target_vel, Player.ACCEL)
 

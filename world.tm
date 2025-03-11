@@ -89,6 +89,19 @@ struct World(
 
     func update_once(w:@World):
         w.player.has_signal = (or: w:raycast(s.pos, w.player.pos) == w.player.pos for s in w.satellites) or no
+        if w.player.pos:dist(w.goal.pos) < 100:
+            w.player.target_vel = Vec2(0,0)
+            w.player.pos = w.player.pos:mix(w.goal.pos, .1)
+            w.player.prev_pos = w.player.pos
+        else if w.player.has_signal:
+            target_x := inline C:Num32 {
+                (Num32_t)((IsKeyDown(KEY_A) ? -1 : 0) + (IsKeyDown(KEY_D) ? 1 : 0))
+            }
+            target_y := inline C:Num32 {
+                (Num32_t)((IsKeyDown(KEY_W) ? -1 : 0) + (IsKeyDown(KEY_S) ? 1 : 0))
+            }
+            w.player.target_vel = Vec2(target_x, target_y):norm() * Player.WALK_SPEED
+
         w.player:update()
 
         if overlaps(w.player.pos, Player.SIZE, w.goal.pos, Goal.SIZE):
