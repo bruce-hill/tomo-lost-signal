@@ -94,8 +94,8 @@ struct World(
         w.player.has_signal = (or: w:raycast(s.pos, w.player.pos) == w.player.pos for s in w.satellites) or no
         if w.player.pos:dist(w.goal.pos) < 100:
             w.player.target_vel = Vec2(0,0)
-            w.player.pos = w.player.pos:mix(w.goal.pos, .1)
-            w.player.prev_pos = w.player.pos
+            w.player.pos = w.player.pos:mix(w.goal.pos, .03)
+            w.player.facing = w.player.facing:norm():rotated(Num32.TAU/60)
         else if w.player.has_signal:
             target_x := inline C:Num32 {
                 (Num32_t)((IsKeyDown(KEY_A) ? -1 : 0) + (IsKeyDown(KEY_D) ? 1 : 0))
