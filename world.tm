@@ -1,26 +1,24 @@
 
+use ./raylib.tm
 use ./player.tm
 use ./camera.tm
-use ./color.tm
 use ./box.tm
 use ./letter.tm
-use ./vec32.tm
-use ./textures.tm
 use ./satellite.tm
 
-struct Goal(pos:Vec2):
-    SIZE := Vec2(32,32)
+struct Goal(pos:Vector2):
+    SIZE := Vector2(32,32)
     func draw(g:Goal):
         texture := Texture.load((./assets/Hurricane.png))
         texture:draw(g.pos, Goal.SIZE)
 
-struct Stars(pos:Vec2, texture:Texture):
-    SIZE := Vec2(50,50)
+struct Stars(pos:Vector2, texture:Texture):
+    SIZE := Vector2(50,50)
     func draw(s:Stars):
-        s.texture:draw(s.pos, Stars.SIZE, tint=Color.rgb(1,1,1,.2))
+        s.texture:draw(s.pos, Stars.SIZE, tint=Color(0xff,0xff,0xff,0x33))
 
 # Return a displacement relative to `a` that will push it out of `b`
-func solve_overlap(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Vec2):
+func solve_overlap(a_pos:Vector2, a_size:Vector2, b_pos:Vector2, b_size:Vector2 -> Vector2):
     a_left := a_pos.x - a_size.x/2
     a_right := a_pos.x + a_size.x/2
     a_top := a_pos.y - a_size.x/2
@@ -37,33 +35,33 @@ func solve_overlap(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Vec2):
 
     # If either axis is not overlapping, then there is no collision:
     if overlap_x <= 0 or overlap_y <= 0:
-        return Vec2(0, 0)
+        return Vector2(0, 0)
 
     if overlap_x < overlap_y:
         if a_right > b_left and a_right < b_right:
-            return Vec2(-(overlap_x), 0)
+            return Vector2(-(overlap_x), 0)
         else if a_left < b_right and a_left > b_left:
-            return Vec2(overlap_x, 0)
+            return Vector2(overlap_x, 0)
     else:
         if a_top < b_bottom and a_top > b_top:
-            return Vec2(0, overlap_y)
+            return Vector2(0, overlap_y)
         else if a_bottom > b_top and a_bottom < b_bottom:
-            return Vec2(0, -overlap_y)
+            return Vector2(0, -overlap_y)
 
-    return Vec2(0, 0)
+    return Vector2(0, 0)
 
-func overlaps(a_pos:Vec2, a_size:Vec2, b_pos:Vec2, b_size:Vec2 -> Bool):
-    return solve_overlap(a_pos, a_size, b_pos, b_size) != Vec2(0, 0)
+func overlaps(a_pos:Vector2, a_size:Vector2, b_pos:Vector2, b_size:Vector2 -> Bool):
+    return solve_overlap(a_pos, a_size, b_pos, b_size) != Vector2(0, 0)
 
-func draw_line(a,b:Vec2, width=5.0, color=Color.rgb(.5,.5,1.,.8)):
+func draw_line(a,b:Vector2, width=5.0, color=Color(0x80,0x80,0xff,0xcc)):
     inline C {
         DrawLineEx(*(Vector2*)&_$a, *(Vector2*)&_$b, (float)_$width, *(Color*)&_$color);
     }
 
 struct World(
-    player=@Player(Vec2(0,0), Vec2(0,0)),
-    camera=@Camera(Vec2(0,0)),
-    goal=Goal(Vec2(0,0)),
+    player=@Player(Vector2(0,0), Vector2(0,0)),
+    camera=@Camera(Vector2(0,0)),
+    goal=Goal(Vector2(0,0)),
     stars=@[:Stars],
     satellites=@[:@Satellite],
     boxes=@[:@Box],
@@ -93,7 +91,7 @@ struct World(
     func update_once(w:@World):
         w.player.has_signal = (or: w:raycast(s.pos, w.player.pos) == w.player.pos for s in w.satellites) or no
         if w.player.pos:dist(w.goal.pos) < 100:
-            w.player.target_vel = Vec2(0,0)
+            w.player.target_vel = Vector2(0,0)
             w.player.pos = w.player.pos:mix(w.goal.pos, .03)
             w.player.facing = w.player.facing:norm():rotated(Num32.TAU/60)
         else if w.player.has_signal:
@@ -103,7 +101,7 @@ struct World(
             target_y := inline C:Num32 {
                 (Num32_t)((IsKeyDown(KEY_W) ? -1 : 0) + (IsKeyDown(KEY_S) ? 1 : 0))
             }
-            w.player.target_vel = Vec2(target_x, target_y):norm() * Player.WALK_SPEED
+            w.player.target_vel = Vector2(target_x, target_y):norm() * Player.WALK_SPEED
 
         w.player:update()
 
@@ -122,7 +120,7 @@ struct World(
 
         w.camera:update(World.DT)
 
-    func raycast(w:@World, start:Vec2, end:Vec2 -> Vec2):
+    func raycast(w:@World, start:Vector2, end:Vector2 -> Vector2):
         return end if start == end
         dist := start:dist(end)
         forward := (end - start)
@@ -179,11 +177,11 @@ struct World(
     func load_map(w:@World, map:Text):
         map = map:replace($/  /, "* ")
         w.boxes = @[:@Box]
-        box_size := Vec2(50., 50.)
+        box_size := Vector2(50., 50.)
         star_textures := [Texture.load(t) for t in (./assets/WhiteStar*):glob()]
         for y,line in map:lines():
             for x,cell in line:split():
-                pos := Vec2((Num32(x)-1) * box_size.x/2, (Num32(y)-1) * box_size.y)
+                pos := Vector2((Num32(x)-1) * box_size.x/2, (Num32(y)-1) * box_size.y)
                 if cell == "[":
                     box := @Box(pos, size=box_size)
                     w.boxes:insert(box)

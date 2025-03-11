@@ -1,9 +1,5 @@
 #!/bin/env tomo
-use libraylib.so
-use <raylib.h>
-use <raymath.h>
-
-use ./camera.tm
+use ./raylib.tm
 use ./world.tm
 use ./player.tm
 
@@ -26,13 +22,9 @@ func main(levels=DEFAULT_LEVELS):
     level_index := 1
     world := World.from_map(levels[level_index])
 
-    extern SetTargetFPS:func(fps:Int32)
     SetTargetFPS(60)
 
-    extern WindowShouldClose:func(->Bool)
-
     while not WindowShouldClose():
-        extern GetFrameTime:func(->Num32)
         dt := GetFrameTime()
         world:update(dt)
 
@@ -45,18 +37,10 @@ func main(levels=DEFAULT_LEVELS):
             level_index -= 1
             world = World.from_map(levels[level_index])
 
-        extern BeginDrawing:func()
-        extern EndDrawing:func()
-        do:
-            BeginDrawing()
-            defer: EndDrawing()
+        BeginDrawing()
+        ClearBackground(Color(0,0,0))
+        world:draw()
+        EndDrawing()
 
-            inline C {
-                ClearBackground((Color){0x00, 0x00, 0x00, 0xFF});
-            }
-
-            world:draw()
-
-    extern CloseWindow:func()
     CloseWindow()
 

@@ -1,16 +1,11 @@
 # Defines a struct representing the player, which is controlled by WASD keys
-use libraylib.so
-use <raylib.h>
-use <raymath.h>
-
-use ./textures.tm
-use ./vec32.tm
+use ./raylib.tm
 use ./world.tm
 
-struct Player(pos,prev_pos:Vec2, facing=Vec2(1,0), has_signal=no, target_vel=Vec2(0,0), texture=Texture.load((./assets/RocketWhite.png))):
+struct Player(pos,prev_pos:Vector2, facing=Vector2(1,0), has_signal=no, target_vel=Vector2(0,0), texture=Texture.load((./assets/RocketWhite.png))):
     WALK_SPEED := Num32(500.)
     ACCEL := Num32(0.1)
-    SIZE := Vec2(32, 32)
+    SIZE := Vector2(32, 32)
     TEXTURE := none:Texture
 
     func update(p:@Player):
@@ -23,5 +18,5 @@ struct Player(pos,prev_pos:Vec2, facing=Vec2(1,0), has_signal=no, target_vel=Vec
 
     func draw(p:Player):
         angle := p.facing:angle()
-        tint := if p.has_signal: Color.WHITE else: Color.rgb(.8,.4,.4,1.)
+        tint := if p.has_signal: Color(0xff,0xff,0xff) else: Color(0xcc,0x66,0x66,0xff)
         p.texture:draw(p.pos, Player.SIZE, angle=angle+Num32.TAU/4, tint=tint)
