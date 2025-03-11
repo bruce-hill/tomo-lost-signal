@@ -5,13 +5,8 @@ use ./color.tm
 use ./box.tm
 use ./letter.tm
 use ./vec32.tm
-
-struct Satellite(pos:Vec2):
-    SIZE := Vec2(32,32)
-    func draw(s:Satellite):
-        #Box(s.pos, Satellite.SIZE, Color.rgb(.8,.3,.8)):draw()
-        texture := Texture.load((./assets/Satellite.png))
-        texture:draw(s.pos, Satellite.SIZE)
+use ./textures.tm
+use ./satellite.tm
 
 struct Goal(pos:Vec2):
     SIZE := Vec2(32,32)
@@ -70,7 +65,7 @@ struct World(
     camera=@Camera(Vec2(0,0)),
     goal=Goal(Vec2(0,0)),
     stars=@[:Stars],
-    satellites=@[:Satellite],
+    satellites=@[:@Satellite],
     boxes=@[:@Box],
     letters=@[:Letter],
     dt_accum=Num32(0.0),
@@ -111,6 +106,9 @@ struct World(
             w.player.target_vel = Vec2(target_x, target_y):norm() * Player.WALK_SPEED
 
         w.player:update()
+
+        for s in w.satellites:
+            s.facing = (w.player.pos - s.pos):norm()
 
         if overlaps(w.player.pos, Player.SIZE, w.goal.pos, Goal.SIZE):
             w.won = yes
@@ -196,7 +194,7 @@ struct World(
                 else if cell == "?":
                     w.goal = Goal(pos)
                 else if cell == "+":
-                    w.satellites:insert(Satellite(pos))
+                    w.satellites:insert(@Satellite(pos))
                 else if cell == " ":
                     if random:bool(0.2):
                         w.stars:insert(Stars(pos, star_textures:random()))

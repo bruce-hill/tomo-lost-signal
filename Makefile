@@ -1,6 +1,6 @@
 
 
-lost-signal: lost-signal.tm box.tm color.tm player.tm world.tm camera.tm textures.tm vec32.tm
+lost-signal: lost-signal.tm box.tm color.tm player.tm world.tm camera.tm textures.tm vec32.tm satellite.tm
 	tomo -e lost-signal.tm
 
 # Disable built-in makefile rules:
