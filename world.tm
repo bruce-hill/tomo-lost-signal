@@ -177,17 +177,18 @@ struct World(
             }
 
     func load_map(w:@World, map:Text):
-        if map:has($/[]/):
-            map = map:replace_all({$/[]/="#", $/@{1..}/="@", $/  /=" "})
+        map = map:replace($/  /, "* ")
         w.boxes = @[:@Box]
         box_size := Vec2(50., 50.)
         star_textures := [Texture.load(t) for t in (./assets/WhiteStar*):glob()]
         for y,line in map:lines():
             for x,cell in line:split():
-                pos := Vec2((Num32(x)-1) * box_size.x, (Num32(y)-1) * box_size.y)
-                if cell == "#":
+                pos := Vec2((Num32(x)-1) * box_size.x/2, (Num32(y)-1) * box_size.y)
+                if cell == "[":
                     box := @Box(pos, size=box_size, color=Color.GRAY)
                     w.boxes:insert(box)
+                else if cell == "]":
+                    pass # Ignored
                 else if cell == "@":
                     pos += box_size/2 - Player.SIZE/2
                     w.player = @Player(pos,pos)
@@ -195,7 +196,7 @@ struct World(
                     w.goal = Goal(pos)
                 else if cell == "+":
                     w.satellites:insert(@Satellite(pos))
-                else if cell == " ":
+                else if cell == "*":
                     if random:bool(0.2):
                         w.stars:insert(Stars(pos, star_textures:random()))
                 else if cell != " ":
