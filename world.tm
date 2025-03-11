@@ -79,6 +79,14 @@ struct World(
     DT := (Num32(1.)/Num32(60.))!
     STIFFNESS := Num32(0.3)
 
+    func from_map(path:Path -> @World):
+        world := @World() 
+        world:load_map(path:read() or exit("Could not find the game map: $path"))
+        world.camera.zoom = inline C : Num32 {
+            (float)GetScreenWidth()/1000.
+        }
+        return world
+
     func update(w:@World, dt:Num32):
         w.dt_accum += dt
         while w.dt_accum > 0:
@@ -154,14 +162,14 @@ struct World(
                 l:draw()
 
             for s in w.satellites:
+                hit := w:raycast(s.pos, w.player.pos)
+                draw_line(s.pos, hit)
+
+            for s in w.satellites:
                 s:draw()
 
             w.goal:draw()
             w.player:draw()
-
-            for s in w.satellites:
-                hit := w:raycast(s.pos, w.player.pos)
-                draw_line(s.pos, hit)
 
             #w.camera:draw()
 
