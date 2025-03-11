@@ -1,4 +1,4 @@
-#!/sbin/tomo
+#!/bin/env tomo
 use libraylib.so
 use <raylib.h>
 use <raymath.h>
