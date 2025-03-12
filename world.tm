@@ -101,7 +101,7 @@ struct World(
         w.camera:update(dt)
 
     func update_once(w:@World):
-        if w.goal and w.player.pos:dist(w.goal!.pos) < 50:
+        if w.goal and w.player.pos:dist(w.goal!.pos) < 30:
             w.player.target_vel = Vector2(0,0)
             w.player.pos = w.player.pos:mix(w.goal!.pos, .03)
         else if w.player.has_signal and not w.player.dead:

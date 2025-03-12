@@ -15,10 +15,13 @@ struct Satellite(pos:Vector2, beam_end=Vector2(0,0), facing=Vector2(1,0)):
         texture:draw(s.pos, Satellite.SIZE, angle=s.facing:angle() + Num32.TAU/8)
 
     func update(s:&Satellite, boxes:[@Box], player:&Player):
-        s.facing = (player.pos - s.pos):norm()
-        s.beam_end = s:raycast(boxes, player.pos)
-        if s.beam_end:dist(player.pos):near(0):
-            player.has_signal = yes
+        if player.dead:
+            s.beam_end = s.pos
+        else:
+            s.facing = (player.pos - s.pos):norm()
+            s.beam_end = s:raycast(boxes, player.pos)
+            if s.beam_end:dist(player.pos):near(0):
+                player.has_signal = yes
 
     func vertical_edge_hit(pos,dir:Vector2, edge_x:Num32, y_min,y_max:Num32 -> Vector2?):
         t := (edge_x - pos.x)/dir.x or return none
