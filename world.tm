@@ -54,12 +54,23 @@ func solve_overlap(a_pos:Vector2, a_size:Vector2, b_pos:Vector2, b_size:Vector2 
 func overlaps(a_pos:Vector2, a_size:Vector2, b_pos:Vector2, b_size:Vector2 -> Bool):
     return solve_overlap(a_pos, a_size, b_pos, b_size) != Vector2(0, 0)
 
+struct Particle(pos,vel:Vector2,radius:Num32,color:Color):
+    func update(p:&Particle, dt:Num32):
+        p.pos += dt*p.vel
+        p.vel *= Num32(0.95)
+        p.radius -= dt*Num32(20.0)
+
+    func draw(p:Particle):
+        if p.radius > 0:
+            DrawCircleV(p.pos, p.radius, p.color)
+
 struct World(
     player=@Player(Vector2(0,0), Vector2(0,0)),
     camera=@Camera(Vector2(0,0)),
     goal=Goal(Vector2(0,0)),
     stars=@[:Stars],
     satellites=@[:@Satellite],
+    particles=@[:@Particle],
     boxes=@[:@Box],
     letters=@[:Letter],
     dt_accum=Num32(0.0),
@@ -89,7 +100,7 @@ struct World(
             w.player.target_vel = Vector2(0,0)
             w.player.pos = w.player.pos:mix(w.goal.pos, .03)
             w.player.facing = w.player.facing:norm():rotated(Num32.TAU/60)
-        else if w.player.has_signal:
+        else if w.player.has_signal and not w.player.dead:
             target_x := inline C:Num32 {
                 (Num32_t)((IsKeyDown(KEY_A) ? -1 : 0) + (IsKeyDown(KEY_D) ? 1 : 0))
             }
@@ -104,6 +115,11 @@ struct World(
         for s in w.satellites:
             s:update(w.boxes, w.player)
 
+        for p in w.particles:
+            p:update(World.DT)
+
+        w.particles[] = [p for p in w.particles if p.radius > 0]
+
         if overlaps(w.player.pos, Player.SIZE, w.goal.pos, Goal.SIZE):
             w.won = yes
 
@@ -111,7 +127,32 @@ struct World(
         for i in 3:
             for b in w.boxes:
                 correction := solve_overlap(w.player.pos, Player.SIZE, b.pos, b.size)
-                #w.camera:add_shake(.1*correction:length())
+                if b.fatal and correction != Vector2(0,0) and not w.player.dead:
+                    # Player hit a killer wall
+                    w.player.dead = yes
+                    w.camera:add_shake(100)
+                    GR := Num32(.5) + Num32.sqrt(5)/2
+                    colors := [
+                        Color(0xFF, 0xA5, 0x00, 0xc0),
+                        Color(0xD2, 0x69, 0x1E, 0xc0),
+                        Color(0x8B, 0x45, 0x13, 0xc0),
+                        Color(0x70, 0x42, 0x22, 0xc0),
+                        Color(0x55, 0x33, 0x22, 0xc0),
+                        Color(0x88, 0x88, 0x88, 0xc0),
+                        Color(0x44, 0x22, 0x11, 0xc0),
+                        Color(0xCC, 0x44, 0x00, 0xc0),
+                    ]
+                    for i in 50:
+                        angle := Num32.TAU * ((Num32(i) * GR)! mod Num32(1))
+                        w.particles:insert(
+                            @Particle(
+                                pos=w.player.pos,
+                                vel=Vector2(random:num32(100,600),0):rotated(angle),
+                                radius=random:num32(10,30),
+                                color=colors[i mod1 colors.length],
+                            )
+                        )
+
                 w.player.pos += World.STIFFNESS * correction
 
         w.camera:update(World.DT)
@@ -139,12 +180,19 @@ struct World(
             w.goal:draw()
             w.player:draw()
 
-            #w.camera:draw()
+            for p in w.particles:
+                p:draw()
+
 
         if w.won:
-            inline C {
-                DrawText("WINNER", GetScreenWidth()/2-48*3, GetScreenHeight()/2-24, 48, (Color){0x80,0xFF,0x80,0xFF});
-            }
+            text := CString("Winner!")
+            width := MeasureText(text, 48)
+            DrawText(text, (GetScreenWidth() - width)/2, (GetScreenHeight()-48)/2, 48, Color(0x80,0xff,0x80))
+
+        if w.player.dead or (not w.player.has_signal and w.player.pos:dist(w.player.prev_pos):near(0)):
+            text := CString("Press 'R' to Restart")
+            width := MeasureText(text, 48)
+            DrawText(text, (GetScreenWidth() - width)/2, (GetScreenHeight()-48)/2, 48, Color(0xff,0x80,0x80))
 
     func load_map(w:@World, map:Text):
         map = map:replace($/  /, "* ")
@@ -156,6 +204,12 @@ struct World(
                 pos := Vector2((Num32(x)-1) * box_size.x/2, (Num32(y)-1) * box_size.y)
                 if cell == "[":
                     box := @Box(pos, size=box_size)
+                    w.boxes:insert(box)
+                else if cell == "#":
+                    box := @Box(pos, size=box_size, color=Color(0xe0,0x10,0x10), fatal=yes)
+                    w.boxes:insert(box)
+                else if cell == "-":
+                    box := @Box(pos, size=box_size, color=Color(0xc0,0xc0,0xff,0x40))
                     w.boxes:insert(box)
                 else if cell == "]":
                     pass # Ignored

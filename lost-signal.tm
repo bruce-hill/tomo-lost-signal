@@ -11,6 +11,7 @@ DEFAULT_LEVELS := [
     (./levels/level2.map),
     (./levels/level3.map),
     (./levels/level4.map),
+    (./levels/level5.map),
 ]
 
 func main(levels=DEFAULT_LEVELS):

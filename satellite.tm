@@ -40,6 +40,7 @@ struct Satellite(pos:Vector2, beam_end=Vector2(0,0), facing=Vector2(1,0)):
         forward := (end - s.pos):norm()
 
         for b in boxes:
+            skip if b.color.a < 0xff
             x_min := b.pos.x - b.size.x/2
             x_max := b.pos.x + b.size.x/2
             y_min := b.pos.y - b.size.y/2
