@@ -54,11 +54,6 @@ func solve_overlap(a_pos:Vector2, a_size:Vector2, b_pos:Vector2, b_size:Vector2 
 func overlaps(a_pos:Vector2, a_size:Vector2, b_pos:Vector2, b_size:Vector2 -> Bool):
     return solve_overlap(a_pos, a_size, b_pos, b_size) != Vector2(0, 0)
 
-func draw_line(a,b:Vector2, width=5.0, color=Color(0x80,0x80,0xff,0xcc)):
-    inline C {
-        DrawLineEx(*(Vector2*)&_$a, *(Vector2*)&_$b, (float)_$width, *(Color*)&_$color);
-    }
-
 struct World(
     player=@Player(Vector2(0,0), Vector2(0,0)),
     camera=@Camera(Vector2(0,0)),
@@ -90,8 +85,7 @@ struct World(
         w.camera:update(dt)
 
     func update_once(w:@World):
-        w.player.has_signal = (or: w:raycast(s.pos, w.player.pos) == w.player.pos for s in w.satellites) or no
-        if w.player.pos:dist(w.goal.pos) < 100:
+        if w.player.pos:dist(w.goal.pos) < 50:
             w.player.target_vel = Vector2(0,0)
             w.player.pos = w.player.pos:mix(w.goal.pos, .03)
             w.player.facing = w.player.facing:norm():rotated(Num32.TAU/60)
@@ -106,8 +100,9 @@ struct World(
 
         w.player:update()
 
+        w.player.has_signal = no
         for s in w.satellites:
-            s.facing = (w.player.pos - s.pos):norm()
+            s:update(w.boxes, w.player)
 
         if overlaps(w.player.pos, Player.SIZE, w.goal.pos, Goal.SIZE):
             w.won = yes
@@ -121,29 +116,6 @@ struct World(
 
         w.camera:update(World.DT)
 
-    func raycast(w:@World, start:Vector2, end:Vector2 -> Vector2):
-        return end if start == end
-        dist := start:dist(end)
-        forward := (end - start)
-
-        for b in w.boxes:
-            x_min := b.pos.x - b.size.x/2
-            x_max := b.pos.x + b.size.x/2
-            y_min := b.pos.y - b.size.y/2
-            y_max := b.pos.y + b.size.y/2
-
-            times := [
-                (x_min - start.x)/forward.x,
-                (x_max - start.x)/forward.x,
-                (y_min - start.y)/forward.y,
-                (y_max - start.y)/forward.y,
-            ]
-            hit_time := (_min_: t for t in times if (0 <= t and t <= 1) and b:has_point(start + (t or skip)*forward))
-            if hit_time:
-                return start + hit_time*forward
-
-        return end
-
     func draw(w:@World):
         do:
             w.camera:begin_drawing()
@@ -152,15 +124,14 @@ struct World(
             for s in w.stars:
                 s:draw()
 
-            for b in w.boxes:
-                b:draw()
-
             for l in w.letters:
                 l:draw()
 
             for s in w.satellites:
-                hit := w:raycast(s.pos, w.player.pos)
-                draw_line(s.pos, hit)
+                s:draw_beam()
+
+            for b in w.boxes:
+                b:draw()
 
             for s in w.satellites:
                 s:draw()

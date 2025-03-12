@@ -13,9 +13,9 @@ struct Box(pos:Vector2, size=Vector2(50, 50), color=Color(0x51,0x51,0x72)):
         b.pos = pos
         return b
 
-    func has_point(b:Box, point:Vector2 -> Bool):
-        return ((b.pos.x - b.size.x/2 <= point.x and point.x <= b.pos.x + b.size.x/2) and
-                (b.pos.y - b.size.y/2 <= point.y and point.y <= b.pos.y + b.size.y/2))
+    func has_point(b:Box, point:Vector2, epsilon=Num32(0.1) -> Bool):
+        return ((b.pos.x - b.size.x/2 <= point.x + epsilon and point.x - epsilon <= b.pos.x + b.size.x/2) and
+                (b.pos.y - b.size.y/2 <= point.y + epsilon and point.y - epsilon <= b.pos.y + b.size.y/2))
 
     func clamped(b:Box, point:Vector2 -> Vector2):
         return Vector2(
