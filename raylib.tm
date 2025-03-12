@@ -12,26 +12,39 @@ struct Rectangle(x,y,width,height:Num32; extern):
 
 struct Camera2D(offset:Vector2, target:Vector2, rotation=Num32(0), zoom=Num32(1); extern)
 
-struct Texture(id,width,height,mipmaps,format:Int32):
-    func load(path:Path -> Texture; cached):
+struct Texture(id,width,height,mipmaps,format:Int32,wrapping=no):
+    func load(path:Path, wrap=no -> Texture; cached):
         c_string := CString(path)
         result := Texture(0,0,0,0,0)
         inline C {
             Texture2D tex = LoadTexture(_$c_string);
+            if (_$wrap) SetTextureWrap(tex, TEXTURE_WRAP_REPEAT);
             memcpy(&_$result, &tex, sizeof(tex));
         }
+        result.wrapping = wrap
         return result
 
-    func draw(t:Texture, pos,size:Vector2, angle=Num32(0.0), tint=Color(0xFF,0xFF,0xFF)):
-        inline C {
-            DrawTexturePro(
-                *(Texture2D*)&_$t,
-                (Rectangle){0,0,_$t.width,_$t.height},
-                (Rectangle){_$pos.x,_$pos.y,_$size.x,_$size.y},
-                (Vector2){_$size.x/2,_$size.y/2},
-                _$angle*180./M_PI,
-                *(Color*)&_$tint);
-        }
+    func draw(t:Texture, pos,size:Vector2, texture_offset=Vector2(0,0), angle=Num32(0.0), tint=Color(0xFF,0xFF,0xFF)):
+        if t.wrapping:
+            inline C {
+                DrawTexturePro(
+                    *(Texture2D*)&_$t,
+                    (Rectangle){_$texture_offset.x, _$texture_offset.y, _$texture_offset.x + _$size.x, _$texture_offset.y + _$size.y},
+                    (Rectangle){_$pos.x,_$pos.y,_$size.x,_$size.y},
+                    (Vector2){0,0},
+                    _$angle*180./M_PI,
+                    *(Color*)&_$tint);
+            }
+        else:
+            inline C {
+                DrawTexturePro(
+                    *(Texture2D*)&_$t,
+                    (Rectangle){0,0,_$t.width,_$t.height},
+                    (Rectangle){_$pos.x,_$pos.y,_$size.x,_$size.y},
+                    (Vector2){_$size.x/2,_$size.y/2},
+                    _$angle*180./M_PI,
+                    *(Color*)&_$tint);
+            }
 
 struct Vector2(x,y:Num32; extern):
     ZERO := Vector2(0, 0)

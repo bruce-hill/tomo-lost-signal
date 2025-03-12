@@ -13,11 +13,6 @@ struct Goal(pos:Vector2):
         texture := Texture.load((./assets/Hurricane.png))
         texture:draw(g.pos, Goal.SIZE)
 
-struct Stars(pos:Vector2, texture:Texture):
-    SIZE := Vector2(50,50)
-    func draw(s:Stars):
-        s.texture:draw(s.pos, Stars.SIZE, tint=Color(0xff,0xff,0xff,0x33))
-
 # Return a displacement relative to `a` that will push it out of `b`
 func solve_overlap(a_pos:Vector2, a_size:Vector2, b_pos:Vector2, b_size:Vector2 -> Vector2):
     a_left := a_pos.x - a_size.x/2
@@ -79,7 +74,6 @@ struct World(
     player=@Player(Vector2(0,0), Vector2(0,0)),
     camera=@Camera(Vector2(0,0)),
     goal=Goal(Vector2(0,0)),
-    stars=@[:Stars],
     satellites=@[:@Satellite],
     particles=@[:@Particle],
     boxes=@[:@Box],
@@ -193,12 +187,24 @@ struct World(
         w.camera:update(World.DT)
 
     func draw(w:@World):
+        ClearBackground(Color(0,0,0))
+        bg := Texture.load((./assets/background.png), yes)
+        bg:draw(
+            Vector2(0,0),
+            Vector2(Num32(GetScreenWidth()), Num32(GetScreenHeight())),
+            texture_offset=w.camera.pos*Num32(0.5),
+            tint=Color(0xff,0xff,0xc0,0xFF),
+        )
+        bg:draw(
+            Vector2(0,0),
+            Vector2(Num32(GetScreenWidth()), Num32(GetScreenHeight())),
+            texture_offset=w.camera.pos*Num32(0.25) + Vector2(500,300),
+            tint=Color(0xff,0xff,0xc0,0x80),
+        )
+
         do:
             w.camera:begin_drawing()
             defer: w.camera:end_drawing()
-
-            for s in w.stars:
-                s:draw()
 
             for l in w.letters:
                 l:draw()
@@ -225,7 +231,6 @@ struct World(
             draw_centered_text(GetScreenWidth()/2, GetScreenHeight()/2 + 70, "Press 'R' to Restart", color=Color(0xff,0x80,0x80))
 
     func load_map(w:@World, map:Text):
-        map = map:replace($/  /, "* ")
         w.boxes = @[:@Box]
         box_size := Vector2(25., 50.)
         star_textures := [Texture.load(t) for t in (./assets/WhiteStar*):glob()]
@@ -250,9 +255,6 @@ struct World(
                     w.goal = Goal(pos)
                 else if cell == "+":
                     w.satellites:insert(@Satellite(pos))
-                else if cell == "*":
-                    if random:bool(0.2):
-                        w.stars:insert(Stars(pos, star_textures:random()))
                 else if cell != " ":
                     w.letters:insert(Letter(CString(cell), pos))
 
