@@ -32,6 +32,11 @@ func main(levels=DEFAULT_LEVELS):
         dt := GetFrameTime()
         world:update(dt)
 
+        if world.won_time and level_index < levels.length:
+            if GetTime() > world.won_time + 3.0:
+                level_index += 1
+                world = World.from_map(levels[level_index])
+
         if inline C : Bool { IsKeyPressed(KEY_R) }:
             world = World.from_map(levels[level_index])
         else if inline C : Bool { IsKeyPressed(KEY_N) } and level_index < levels.length:

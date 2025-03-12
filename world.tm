@@ -64,6 +64,17 @@ struct Particle(pos,vel:Vector2,radius:Num32,color:Color):
         if p.radius > 0:
             DrawCircleV(p.pos, p.radius, p.color)
 
+func draw_centered_text(x,y:Int32, text:Text, color:Color, font_size=Int32(48), shadow=yes):
+    if shadow:
+        draw_centered_text(x+2,y,text, Color(0,0,0), font_size, shadow=no)
+        draw_centered_text(x-2,y,text, Color(0,0,0), font_size, shadow=no)
+        draw_centered_text(x,y+2,text, Color(0,0,0), font_size, shadow=no)
+        draw_centered_text(x,y-2,text, Color(0,0,0), font_size, shadow=no)
+
+    string := CString(text)
+    width := MeasureText(string, 48)
+    DrawText(string, x - width/2, y - font_size/2, font_size, color)
+
 struct World(
     player=@Player(Vector2(0,0), Vector2(0,0)),
     camera=@Camera(Vector2(0,0)),
@@ -74,7 +85,7 @@ struct World(
     boxes=@[:@Box],
     letters=@[:Letter],
     dt_accum=Num32(0.0),
-    won=no,
+    won_time=none:Num,
 ):
     DT := (Num32(1.)/Num32(60.))!
     STIFFNESS := Num32(0.3)
@@ -99,7 +110,6 @@ struct World(
         if w.player.pos:dist(w.goal.pos) < 50:
             w.player.target_vel = Vector2(0,0)
             w.player.pos = w.player.pos:mix(w.goal.pos, .03)
-            w.player.facing = w.player.facing:norm():rotated(Num32.TAU/60)
         else if w.player.has_signal and not w.player.dead:
             target_x := inline C:Num32 {
                 (Num32_t)((IsKeyDown(KEY_A) ? -1 : 0) + (IsKeyDown(KEY_D) ? 1 : 0))
@@ -110,6 +120,8 @@ struct World(
             w.player.target_vel = Vector2(target_x, target_y):norm() * Player.WALK_SPEED
 
         w.player:update()
+        if w.won_time:
+            w.player.facing = w.player.facing:norm():rotated(Num32.TAU/60)
 
         w.player.has_signal = no
         for s in w.satellites:
@@ -120,8 +132,31 @@ struct World(
 
         w.particles[] = [p for p in w.particles if p.radius > 0]
 
-        if overlaps(w.player.pos, Player.SIZE, w.goal.pos, Goal.SIZE):
-            w.won = yes
+        if not w.won_time and overlaps(w.player.pos, Player.SIZE, w.goal.pos, Goal.SIZE):
+            w.won_time = GetTime()
+
+            GR := Num32(.5) + Num32.sqrt(5)/2
+            colors := [
+                Color(0xFF, 0x00, 0x66),
+                Color(0x00, 0xCC, 0xFF),
+                Color(0xFF, 0xFF, 0x33),
+                Color(0x66, 0xFF, 0x66),
+                Color(0xFF, 0x66, 0x00),
+                Color(0x99, 0x33, 0xFF),
+                Color(0xFF, 0x33, 0x99),
+                Color(0x00, 0xFF, 0xCC),
+            ]
+            for i in 50:
+                angle := Num32.TAU * ((Num32(i) * GR)! mod Num32(1))
+                w.particles:insert(
+                    @Particle(
+                        pos=w.goal.pos,
+                        vel=Vector2(random:num32(100,500),0):rotated(angle),
+                        radius=random:num32(7,10),
+                        color=colors[i mod1 colors.length],
+                    )
+                )
+
 
         # Resolve player overlapping with any boxes:
         for i in 3:
@@ -184,25 +219,20 @@ struct World(
                 p:draw()
 
 
-        if w.won:
-            text := CString("Winner!")
-            width := MeasureText(text, 48)
-            DrawText(text, (GetScreenWidth() - width)/2, (GetScreenHeight()-48)/2, 48, Color(0x80,0xff,0x80))
-
-        if w.player.dead or (not w.player.has_signal and w.player.pos:dist(w.player.prev_pos):near(0)):
-            text := CString("Press 'R' to Restart")
-            width := MeasureText(text, 48)
-            DrawText(text, (GetScreenWidth() - width)/2, (GetScreenHeight()-48)/2, 48, Color(0xff,0x80,0x80))
+        if w.won_time:
+            draw_centered_text(GetScreenWidth()/2, GetScreenHeight()/2 + 70, "You Win!", color=Color(0x80,0xff,0x80))
+        else if w.player.dead or (not w.player.has_signal and w.player.pos:dist(w.player.prev_pos) < Num32(1.0)):
+            draw_centered_text(GetScreenWidth()/2, GetScreenHeight()/2 + 70, "Press 'R' to Restart", color=Color(0xff,0x80,0x80))
 
     func load_map(w:@World, map:Text):
         map = map:replace($/  /, "* ")
         w.boxes = @[:@Box]
-        box_size := Vector2(50., 50.)
+        box_size := Vector2(25., 50.)
         star_textures := [Texture.load(t) for t in (./assets/WhiteStar*):glob()]
         for y,line in map:lines():
             for x,cell in line:split():
-                pos := Vector2((Num32(x)-1) * box_size.x/2, (Num32(y)-1) * box_size.y)
-                if cell == "[":
+                pos := Vector2((Num32(x)-1) * box_size.x, (Num32(y)-1) * box_size.y)
+                if cell == "[" or cell == "]":
                     box := @Box(pos, size=box_size)
                     w.boxes:insert(box)
                 else if cell == "#":

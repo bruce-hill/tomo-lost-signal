@@ -2,7 +2,7 @@
 
 use ./raylib.tm
 
-struct Box(pos:Vector2, size=Vector2(50, 50), color=Color(0x61,0x51,0x72), fatal=no):
+struct Box(pos:Vector2, size=Vector2(50, 50), color=Color(0x51,0x41,0x62), fatal=no):
     func draw(b:Box):
         DrawRectangleV(b.pos - b.size/2, b.size, b.color)
 
