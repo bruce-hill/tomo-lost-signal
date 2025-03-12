@@ -73,7 +73,7 @@ func draw_centered_text(x,y:Int32, text:Text, color:Color, font_size=Int32(48), 
 struct World(
     player=@Player(Vector2(0,0), Vector2(0,0)),
     camera=@Camera(Vector2(0,0)),
-    goal=Goal(Vector2(0,0)),
+    goal=none:Goal,
     satellites=@[:@Satellite],
     particles=@[:@Particle],
     boxes=@[:@Box],
@@ -101,9 +101,9 @@ struct World(
         w.camera:update(dt)
 
     func update_once(w:@World):
-        if w.player.pos:dist(w.goal.pos) < 50:
+        if w.goal and w.player.pos:dist(w.goal!.pos) < 50:
             w.player.target_vel = Vector2(0,0)
-            w.player.pos = w.player.pos:mix(w.goal.pos, .03)
+            w.player.pos = w.player.pos:mix(w.goal!.pos, .03)
         else if w.player.has_signal and not w.player.dead:
             target_x := inline C:Num32 {
                 (Num32_t)((IsKeyDown(KEY_A) ? -1 : 0) + (IsKeyDown(KEY_D) ? 1 : 0))
@@ -126,7 +126,7 @@ struct World(
 
         w.particles[] = [p for p in w.particles if p.radius > 0]
 
-        if not w.won_time and overlaps(w.player.pos, Player.SIZE, w.goal.pos, Goal.SIZE):
+        if not w.won_time and w.goal and overlaps(w.player.pos, Player.SIZE, w.goal!.pos, Goal.SIZE):
             w.won_time = GetTime()
 
             GR := Num32(.5) + Num32.sqrt(5)/2
@@ -144,7 +144,7 @@ struct World(
                 angle := Num32.TAU * ((Num32(i) * GR)! mod Num32(1))
                 w.particles:insert(
                     @Particle(
-                        pos=w.goal.pos,
+                        pos=w.goal!.pos,
                         vel=Vector2(random:num32(100,500),0):rotated(angle),
                         radius=random:num32(7,10),
                         color=colors[i mod1 colors.length],
@@ -218,7 +218,9 @@ struct World(
             for s in w.satellites:
                 s:draw()
 
-            w.goal:draw()
+            if goal := w.goal:
+                goal:draw()
+
             w.player:draw()
 
             for p in w.particles:
