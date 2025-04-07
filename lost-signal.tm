@@ -17,11 +17,11 @@ DEFAULT_LEVELS := [
     (./levels/victory.map),
 ]
 
-func main(levels=DEFAULT_LEVELS):
-    if levels.length == 0:
+func main(levels=DEFAULT_LEVELS)
+    if levels.length == 0
         exit("No levels provided!")
 
-    inline C {
+    C_code {
         InitWindow(GetScreenWidth(), GetScreenHeight(), "raylib [core] example - 2d camera");
         ToggleFullscreen();
     }
@@ -31,27 +31,27 @@ func main(levels=DEFAULT_LEVELS):
 
     SetTargetFPS(60)
 
-    while not WindowShouldClose():
+    while not WindowShouldClose()
         dt := GetFrameTime()
-        world:update(dt)
+        world.update(dt)
 
-        if world.won_time and level_index < levels.length:
-            if GetTime() > world.won_time + 3.0:
+        if world.won_time and level_index < levels.length
+            if GetTime() > world.won_time! + 3.0
                 level_index += 1
                 world = World.from_map(levels[level_index])
 
-        if inline C : Bool { IsKeyPressed(KEY_R) }:
+        if C_code : Bool (IsKeyPressed(KEY_R))
             world = World.from_map(levels[level_index])
-        else if inline C : Bool { IsKeyPressed(KEY_N) } and level_index < levels.length:
+        else if C_code : Bool (IsKeyPressed(KEY_N)) and level_index < levels.length
             level_index += 1
             world = World.from_map(levels[level_index])
-        else if inline C : Bool { IsKeyPressed(KEY_P) } and level_index > 1:
+        else if C_code : Bool (IsKeyPressed(KEY_P)) and level_index > 1
             level_index -= 1
             world = World.from_map(levels[level_index])
 
         BeginDrawing()
         ClearBackground(Color(0,0,0))
-        world:draw()
+        world.draw()
         EndDrawing()
 
     CloseWindow()

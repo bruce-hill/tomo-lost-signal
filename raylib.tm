@@ -1,88 +1,88 @@
 # Raylib wrappers for some functions and structs
 
-use libraylib.so
+use -lraylib
 use <raylib.h>
 use <raymath.h>
 
 struct Color(r,g,b:Byte,a=Byte(255); extern)
 
-struct Rectangle(x,y,width,height:Num32; extern):
-    func draw(r:Rectangle, color:Color):
+struct Rectangle(x,y,width,height:Num32; extern)
+    func draw(r:Rectangle, color:Color)
         DrawRectangleRec(r, color)
 
 struct Camera2D(offset:Vector2, target:Vector2, rotation=Num32(0), zoom=Num32(1); extern)
 
-struct Texture(id,width,height,mipmaps,format:Int32,wrapping=no):
-    func load(path:Path, wrap=no -> Texture; cached):
+struct Texture(id,width,height,mipmaps,format:Int32,wrapping=no)
+    func load(path:Path, wrap=no -> Texture; cached)
         c_string := CString(path)
         result := Texture(0,0,0,0,0)
-        inline C {
-            Texture2D tex = LoadTexture(_$c_string);
-            if (_$wrap) SetTextureWrap(tex, TEXTURE_WRAP_REPEAT);
-            memcpy(&_$result, &tex, sizeof(tex));
+        C_code {
+            Texture2D tex = LoadTexture(@c_string);
+            if (@wrap) SetTextureWrap(tex, TEXTURE_WRAP_REPEAT);
+            memcpy(&@result, &tex, sizeof(tex));
         }
         result.wrapping = wrap
         return result
 
-    func draw(t:Texture, pos,size:Vector2, texture_offset=Vector2(0,0), angle=Num32(0.0), tint=Color(0xFF,0xFF,0xFF)):
-        if t.wrapping:
-            inline C {
+    func draw(t:Texture, pos,size:Vector2, texture_offset=Vector2(0,0), angle=Num32(0.0), tint=Color(0xFF,0xFF,0xFF))
+        if t.wrapping
+            C_code {
                 DrawTexturePro(
-                    *(Texture2D*)&_$t,
-                    (Rectangle){_$texture_offset.x, _$texture_offset.y, _$texture_offset.x + _$size.x, _$texture_offset.y + _$size.y},
-                    (Rectangle){_$pos.x,_$pos.y,_$size.x,_$size.y},
+                    *(Texture2D*)&@t,
+                    (Rectangle){@texture_offset.x, @texture_offset.y, @texture_offset.x + @size.x, @texture_offset.y + @size.y},
+                    (Rectangle){@pos.x,@pos.y,@size.x,@size.y},
                     (Vector2){0,0},
-                    _$angle*180./M_PI,
-                    *(Color*)&_$tint);
+                    @angle*180./M_PI,
+                    *(Color*)&@tint);
             }
-        else:
-            inline C {
+        else
+            C_code {
                 DrawTexturePro(
-                    *(Texture2D*)&_$t,
-                    (Rectangle){0,0,_$t.width,_$t.height},
-                    (Rectangle){_$pos.x,_$pos.y,_$size.x,_$size.y},
-                    (Vector2){_$size.x/2,_$size.y/2},
-                    _$angle*180./M_PI,
-                    *(Color*)&_$tint);
+                    *(Texture2D*)&@t,
+                    (Rectangle){0,0,@t.width,@t.height},
+                    (Rectangle){@pos.x,@pos.y,@size.x,@size.y},
+                    (Vector2){@size.x/2,@size.y/2},
+                    @angle*180./M_PI,
+                    *(Color*)&@tint);
             }
 
-struct Vector2(x,y:Num32; extern):
+struct Vector2(x,y:Num32; extern)
     ZERO := Vector2(0, 0)
-    func plus(a,b:Vector2->Vector2; inline):
+    func plus(a,b:Vector2->Vector2; inline)
         return Vector2(a.x+b.x, a.y+b.y)
-    func minus(a,b:Vector2->Vector2; inline):
+    func minus(a,b:Vector2->Vector2; inline)
         return Vector2(a.x-b.x, a.y-b.y)
-    func times(a,b:Vector2->Vector2; inline):
+    func times(a,b:Vector2->Vector2; inline)
         return Vector2(a.x*b.x, a.y*b.y)
-    func negative(v:Vector2->Vector2; inline):
+    func negative(v:Vector2->Vector2; inline)
         return Vector2(-v.x, -v.y)
-    func dot(a,b:Vector2->Num32; inline):
-        return ((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y))!
-    func cross(a,b:Vector2->Num32; inline):
+    func dot(a,b:Vector2->Num32; inline)
+        return ((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y))
+    func cross(a,b:Vector2->Num32; inline)
         return a.x*b.y - a.y*b.x
-    func scaled_by(v:Vector2, k:Num32->Vector2; inline):
+    func scaled_by(v:Vector2, k:Num32->Vector2; inline)
         return Vector2(v.x*k, v.y*k)
-    func divided_by(v:Vector2, divisor:Num32->Vector2; inline):
+    func divided_by(v:Vector2, divisor:Num32->Vector2; inline)
         return Vector2(v.x/divisor, v.y/divisor)
-    func length(v:Vector2->Num32; inline):
-        return (v.x*v.x + v.y*v.y)!:sqrt()
-    func dist(a,b:Vector2->Num32; inline):
-        return a:minus(b):length()
-    func angle(v:Vector2->Num32; inline):
+    func length(v:Vector2->Num32; inline)
+        return (v.x*v.x + v.y*v.y).sqrt()
+    func dist(a,b:Vector2->Num32; inline)
+        return a.minus(b).length()
+    func angle(v:Vector2->Num32; inline)
         return Num32.atan2(v.y, v.x)
-    func norm(v:Vector2->Vector2; inline):
-        if v.x == 0 and v.y == 0:
+    func norm(v:Vector2->Vector2; inline)
+        if v.x == 0 and v.y == 0
             return v
-        len := v:length()
+        len := v.length()
         return Vector2(v.x/len, v.y/len)
-    func rotated(v:Vector2, radians:Num32 -> Vector2):
-        cos := radians:cos() or return v
-        sin := radians:sin() or return v
+    func rotated(v:Vector2, radians:Num32 -> Vector2)
+        cos := radians.cos() or return v
+        sin := radians.sin() or return v
         return Vector2(cos*v.x - sin*v.y, sin*v.x + cos*v.y)
-    func mix(a,b:Vector2, amount:Num32 -> Vector2):
+    func mix(a,b:Vector2, amount:Num32 -> Vector2)
         return Vector2(
-            amount:mix(a.x, b.x),
-            amount:mix(a.y, b.y),
+            amount.mix(a.x, b.x),
+            amount.mix(a.y, b.y),
         )
 
 extern BeginDrawing:func()
